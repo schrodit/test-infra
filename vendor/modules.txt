@@ -27,6 +27,13 @@ github.com/argoproj/argo/pkg/client/clientset/versioned/scheme
 github.com/argoproj/argo/pkg/client/clientset/versioned
 github.com/argoproj/argo/pkg/apis/workflow
 github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1
+# github.com/awalterschulze/gographviz v0.0.0-20190522210029-fa59802746ab
+github.com/awalterschulze/gographviz
+github.com/awalterschulze/gographviz/ast
+github.com/awalterschulze/gographviz/internal/parser
+github.com/awalterschulze/gographviz/internal/token
+github.com/awalterschulze/gographviz/internal/errors
+github.com/awalterschulze/gographviz/internal/lexer
 # github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
 github.com/beorn7/perks/quantile
 # github.com/codeclysm/extract v2.2.0+incompatible

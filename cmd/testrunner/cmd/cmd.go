@@ -18,6 +18,7 @@ import (
 	"github.com/gardener/test-infra/cmd/testrunner/cmd/collect"
 	"github.com/gardener/test-infra/cmd/testrunner/cmd/rungardenertemplate"
 	"github.com/gardener/test-infra/cmd/testrunner/cmd/version"
+	"github.com/gardener/test-infra/cmd/testrunner/cmd/visualize"
 	"os"
 
 	"github.com/gardener/test-infra/cmd/testrunner/cmd/docs"
@@ -55,5 +56,6 @@ func init() {
 	rungardenertemplate.AddCommand(rootCmd)
 	collectcmd.AddCommand(rootCmd)
 	docs.AddCommand(rootCmd)
+	visualize.AddCommand(rootCmd)
 	versioncmd.AddCommand(rootCmd)
 }

@@ -8,6 +8,7 @@ require (
 	github.com/Masterminds/sprig v2.17.1+incompatible // indirect
 	github.com/aokoli/goutils v1.1.0 // indirect
 	github.com/argoproj/argo v2.3.0+incompatible
+	github.com/awalterschulze/gographviz v0.0.0-20190522210029-fa59802746ab
 	github.com/codeclysm/extract v2.2.0+incompatible
 	github.com/cpuguy83/go-md2man v1.0.8 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
