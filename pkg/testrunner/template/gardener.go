@@ -69,29 +69,23 @@ func RenderGardenerTestrun(log logr.Logger, tmClient kubernetes.Interface, param
 		return nil, fmt.Errorf("cannot render chart: %s", err.Error())
 	}
 
-	files := ParseTestrunChart(chart, TestrunFileMetadata{})
+	testruns := ParseTestrunsFromChart(log, chart)
 
 	// parse the rendered testruns and add locations from BOM of a bom was provided.
-	testruns := make([]*testrunner.Run, 0)
-	for _, file := range files {
-		tr, err := util.ParseTestrun([]byte(file.File))
-		if err != nil {
-			log.Info(fmt.Sprintf("cannot parse rendered file: %s", err.Error()))
-			continue
-		}
-
+	runs := make([]*testrunner.Run, 0)
+	for _, tr := range testruns {
 		testrunMetadata := *metadata
 
 		// Add all repositories defined in the component descriptor to the testrun locations.
 		// This gives us all dependent repositories as well as there deployed version.
-		addBOMLocationsToTestrun(&tr, "default", componentDescriptor)
-		addBOMLocationsToTestrun(&tr, "upgraded", upgradedComponentDescriptor)
+		addBOMLocationsToTestrun(tr, "default", componentDescriptor)
+		addBOMLocationsToTestrun(tr, "upgraded", upgradedComponentDescriptor)
 
 		// Add runtime annotations to the testrun
-		addAnnotationsToTestrun(&tr, metadata.CreateAnnotations())
+		addAnnotationsToTestrun(tr, metadata.CreateAnnotations())
 
-		testruns = append(testruns, &testrunner.Run{
-			Testrun:  &tr,
+		runs = append(runs, &testrunner.Run{
+			Testrun:  tr,
 			Metadata: &testrunMetadata,
 		})
 	}
@@ -100,5 +94,5 @@ func RenderGardenerTestrun(log logr.Logger, tmClient kubernetes.Interface, param
 		return nil, errors.NewNotRenderedError(fmt.Sprintf("no testruns in the helm chart at %s", parameters.TestrunChartPath))
 	}
 
-	return testruns, nil
+	return runs, nil
 }

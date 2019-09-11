@@ -85,13 +85,13 @@ var runCmd = &cobra.Command{
 
 		testrunName := fmt.Sprintf("%s-", testrunNamePrefix)
 		config := &testrunner.Config{
-			TmClient:  tmClient,
+			Client:    tmClient,
 			Namespace: namespace,
 			Timeout:   timeout,
 			Interval:  interval,
 		}
 
-		rsConfig := &result.Config{
+		rsConfig := result.Config{
 			OutputDir:           outputDirPath,
 			ESConfigName:        elasticSearchConfigName,
 			S3Endpoint:          s3Endpoint,
@@ -117,14 +117,19 @@ var runCmd = &cobra.Command{
 			logger.Log.Error(err, "unable to render testrun")
 			os.Exit(1)
 		}
-
 		if dryRun {
 			fmt.Print(util.PrettyPrintStruct(runs))
 			os.Exit(0)
 		}
 
+		collector, err := result.New(logger.Log.WithName("collector"), rsConfig)
+		if err != nil {
+			logger.Log.Error(err, "unable to initialize collector")
+			os.Exit(1)
+		}
+
 		testrunner.ExecuteTestruns(logger.Log.WithName("Execute"), config, runs, testrunName)
-		failed, err := result.Collect(logger.Log.WithName("Collect"), rsConfig, tmClient, config.Namespace, runs)
+		failed, err := collector.Collect(logger.Log.WithName("Collect"), tmClient, config.Namespace, runs)
 		if err != nil {
 			logger.Log.Error(err, "unable to collect results")
 			os.Exit(1)

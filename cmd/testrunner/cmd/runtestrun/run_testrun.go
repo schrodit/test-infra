@@ -70,7 +70,7 @@ var runTestrunCmd = &cobra.Command{
 		}
 
 		config := &testrunner.Config{
-			TmClient:  tmClient,
+			Client:    tmClient,
 			Namespace: namespace,
 			Timeout:   timeout,
 			Interval:  interval,

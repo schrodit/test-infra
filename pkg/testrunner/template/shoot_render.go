@@ -2,21 +2,21 @@ package template
 
 import (
 	"fmt"
-	"github.com/go-logr/logr"
-	"io/ioutil"
-
 	"github.com/gardener/gardener/pkg/chartrenderer"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/utils"
+	"github.com/gardener/test-infra/pkg/apis/testmachinery/v1beta1"
 	"github.com/gardener/test-infra/pkg/util"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"io/ioutil"
 	"k8s.io/helm/pkg/strvals"
 )
 
 // RenderChart renders the provided helm chart with testruns, adds the testrun parameters and returns the templated files.
-func RenderChart(log logr.Logger, tmClient kubernetes.Interface, parameters *ShootTestrunParameters, versions []string) ([]*TestrunFile, error) {
+func RenderChart(log logr.Logger, tmClient kubernetes.Interface, parameters *ShootTestrunParameters, versions []string) ([]*RenderedTestrun, error) {
 	log.V(3).Info(fmt.Sprintf("Parameters: %+v", util.PrettyPrintStruct(parameters)))
-	log.V(3).Info("RenderShootTestrun chart", "chart", parameters.TestrunChartPath)
+	log.V(3).Info("RenderShootTestruns chart", "chart", parameters.TestrunChartPath)
 
 	tmChartRenderer, err := chartrenderer.NewForConfig(tmClient.RESTConfig())
 	if err != nil {
@@ -28,7 +28,7 @@ func RenderChart(log logr.Logger, tmClient kubernetes.Interface, parameters *Sho
 		return nil, errors.Wrapf(err, "cannot read gardener kubeconfig %s", parameters.GardenKubeconfigPath)
 	}
 
-	renderedFiles := []*TestrunFile{}
+	renderedFiles := []*RenderedTestrun{}
 	for _, version := range versions {
 		files, err := RenderSingleChart(log, tmChartRenderer, parameters, gardenKubeconfig, version)
 		if err != nil {
@@ -39,11 +39,14 @@ func RenderChart(log logr.Logger, tmClient kubernetes.Interface, parameters *Sho
 	return renderedFiles, nil
 }
 
-func RenderSingleChart(log logr.Logger, renderer chartrenderer.Interface, parameters *ShootTestrunParameters, gardenKubeconfig []byte, version string) ([]*TestrunFile, error) {
+func RenderSingleChart(log logr.Logger, renderer chartrenderer.Interface, parameters *ShootTestrunParameters, gardenKubeconfig []byte, version string) ([]*RenderedTestrun, error) {
+	newParameters := *parameters
+	newParameters.ShootName = fmt.Sprintf("%s-%s", parameters.ShootName, util.RandomString(5))
+	newParameters.Namespace = fmt.Sprintf("garden-%s", parameters.ProjectName)
 	values := map[string]interface{}{
 		"shoot": map[string]interface{}{
-			"name":             fmt.Sprintf("%s-%s", parameters.ShootName, util.RandomString(5)),
-			"projectNamespace": fmt.Sprintf("garden-%s", parameters.ProjectName),
+			"name":             newParameters.ShootName,
+			"projectNamespace": newParameters.Namespace,
 			"cloudprovider":    parameters.Cloudprovider,
 			"cloudprofile":     parameters.Cloudprofile,
 			"secretBinding":    parameters.SecretBinding,
@@ -79,9 +82,18 @@ func RenderSingleChart(log logr.Logger, renderer chartrenderer.Interface, parame
 		return nil, err
 	}
 
-	return ParseTestrunChart(chart, TestrunFileMetadata{
-		KubernetesVersion: version,
-	}), nil
+	testruns := ParseTestrunsFromChart(log, chart)
+	renderedTestruns := make([]*RenderedTestrun, len(testruns))
+	for i, tr := range testruns {
+		renderedTestruns[i] = &RenderedTestrun{
+			testrun:    tr,
+			Parameters: newParameters,
+			Metadata: TestrunFileMetadata{
+				KubernetesVersion: version,
+			},
+		}
+	}
+	return renderedTestruns, nil
 }
 
 // determineValues fetches values from all specified files and set values.
@@ -101,13 +113,15 @@ func determineValues(defaultValues map[string]interface{}, setValues string, fil
 	return defaultValues, nil
 }
 
-func ParseTestrunChart(chart *chartrenderer.RenderedChart, metadata TestrunFileMetadata) []*TestrunFile {
-	files := make([]*TestrunFile, 0)
+func ParseTestrunsFromChart(log logr.Logger, chart *chartrenderer.RenderedChart) []*v1beta1.Testrun {
+	testruns := make([]*v1beta1.Testrun, 0)
 	for _, file := range chart.Files() {
-		files = append(files, &TestrunFile{
-			File:     file,
-			Metadata: metadata,
-		})
+		tr, err := util.ParseTestrun([]byte(file))
+		if err != nil {
+			log.Info(fmt.Sprintf("cannot parse rendered file: %s", err.Error()))
+			continue
+		}
+		testruns = append(testruns, &tr)
 	}
-	return files
+	return testruns
 }

@@ -31,7 +31,7 @@ var _ = Describe("Testrunner execution tests", func() {
 
 	BeforeEach(func() {
 		testrunConfig = testrunner.Config{
-			TmClient:  operation.Client(),
+			Client:    operation.Client(),
 			Namespace: operation.TestNamespace(),
 			Timeout:   int64(InitializationTimeout),
 			Interval:  5,
