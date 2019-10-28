@@ -64,7 +64,7 @@ func (t *test) Command() string {
 }
 
 func (_ *test) Authorization() github.AuthorizationType {
-	return github.AuthorizationOrg
+	return github.AuthorizationTeam
 }
 
 func (t *test) Description() string {

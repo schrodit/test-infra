@@ -41,8 +41,7 @@ test:
 #### echo
 Writes the value as PR comment
 ```
-Command: echo
-Flags: --value string
+Command: echo value..
 ```
 #### xkcd
 Prints a random or flag specified xkcd

@@ -39,7 +39,7 @@ func (_ *echo) Command() string {
 }
 
 func (_ *echo) Authorization() github.AuthorizationType {
-	return github.AuthorizationAll
+	return github.AuthorizationOrg
 }
 
 func (_ *echo) Description() string {
@@ -47,7 +47,7 @@ func (_ *echo) Description() string {
 }
 
 func (_ *echo) Example() string {
-	return "/echo --val \"text to echo\""
+	return "/echo \"text to echo\""
 }
 
 func (_ *echo) ResumeFromState(_ github.Client, _ *github.GenericRequestEvent, _ string) error {
@@ -56,21 +56,20 @@ func (_ *echo) ResumeFromState(_ github.Client, _ *github.GenericRequestEvent, _
 
 func (e *echo) Flags() *pflag.FlagSet {
 	flagset := pflag.NewFlagSet(e.Command(), pflag.ContinueOnError)
-	flagset.StringVarP(&e.value, "value", "v", "", "Echo value")
 	return flagset
 }
 
 func (e *echo) Run(flagset *pflag.FlagSet, client github.Client, event *github.GenericRequestEvent) error {
-
+	var val string
 	cfg, err := client.GetConfig(e.Command())
 	if err == nil {
 		fmt.Println(string(cfg))
 	}
 
-	val, err := flagset.GetString("value")
-	if err != nil {
-		return err
+	if flagset.NArg() != 0 {
+		val = flagset.Arg(0)
 	}
+
 	_, err = client.Comment(event, fmt.Sprintf("@%s: %s\n%s", event.GetAuthorName(), val, e.runID))
 	return err
 }

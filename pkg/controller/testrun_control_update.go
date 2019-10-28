@@ -171,7 +171,6 @@ func getNodeStatusByName(wf *argov1.Workflow, templateName string) *argov1.NodeS
 			return &nodeStatus
 		}
 	}
-
 	return nil
 }
 
